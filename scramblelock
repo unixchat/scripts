@@ -1,0 +1,25 @@
+#!/bin/sh
+# selectively blur windows and use that as a lock screen via `i3lock`
+# depends on;
+# - imagemagick convert
+# - wmutils
+# - i3lock
+
+AMOUNT=1
+NOISE=2
+ORIG="`mktemp /tmp/scrlock.XXXX.png`"
+SCRAMBLE="`mktemp /tmp/scrlock.XXXX.png`"
+trap "rm -f $ORIG $SCRAMBLE" exit
+
+sleep 0.05
+scrot $ORIG
+
+for WID in `lsw`
+do
+	REGION="`wattr whxy $WID | sed 's/ /x/; s/ /+/g'`"
+	COMMANDS="$COMMANDS -region $REGION -statistic mode $AMOUNT +noise uniform +region -region $REGION -noise $NOISE +noise uniform +region"
+done
+
+convert $ORIG $COMMANDS $SCRAMBLE
+
+i3lock -n -u -i $SCRAMBLE
